@@ -1,0 +1,15 @@
+BUF     EQU     2000
+TERM    EQU     19
+        ORIG    2000
+        ENTA    2
+        DECA    4
+** Comienzo el bucle
+LOOP    STA     2000(1:5)
+        MUL     2000
+        STX     2000
+        DIV     2000
+        OUT     BUF(TERM)
+        CMPA    2000
+        INCA    2
+        JL      LOOP
+        HLT
