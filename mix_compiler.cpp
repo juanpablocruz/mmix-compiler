@@ -222,73 +222,73 @@ int execute_instruction(mix_computer *computer, mix_code_instruction instruction
     } break;
     case LDAN: {
         mix_word tmp = registerDest;
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         load_to_register(&computer->rA, tmp);
     } break;
     case LD1N: {
         mix_word tmp = registerDest;
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         load_to_register(&computer->r1, tmp);
     } break;
     case LD2N: {
         mix_word tmp = registerDest;
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         load_to_register(&computer->r2, tmp);
     } break;
     case LD3N: {
         mix_word tmp = registerDest;
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         load_to_register(&computer->r3, tmp);
     } break;
     case LD4N: {
         mix_word tmp = registerDest;
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         load_to_register(&computer->r4, tmp);
     } break;
     case LD5N: {
         mix_word tmp = registerDest;
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         load_to_register(&computer->r5, tmp);
     } break;
     case LD6N: {
         mix_word tmp = registerDest;
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         load_to_register(&computer->r6, tmp);
     } break;
     case LDXN: {
         mix_word tmp = registerDest;
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         load_to_register(&computer->rX, tmp);
     } break;
@@ -302,10 +302,10 @@ int execute_instruction(mix_computer *computer, mix_code_instruction instruction
     case SUB: {
         mix_word tmp;
         load_to_register(&tmp, registerDest);
-        if (tmp.sign == TRUE) {
-            tmp.sign = FALSE;
+        if (tmp.sign == MIX_POSITIVE) {
+            tmp.sign = MIX_NEGATIVE;
         } else {
-            tmp.sign = TRUE;
+            tmp.sign = MIX_POSITIVE;
         }
         int overflow = add_to_register(&computer->rA, tmp);
         if (overflow) {
@@ -824,13 +824,10 @@ int execute_instruction(mix_computer *computer, mix_code_instruction instruction
         }
     }break;
     case IOC:{
-
     }break;
     case JRED:{
-
     }break;
     case JBUS:{
-
     }break;
 
     case NUM: {
@@ -895,6 +892,7 @@ int execute_instruction(mix_computer *computer, mix_code_instruction instruction
             computer->memory[address] = reg;
         }
     }break;
+
     default:
         break;
     }
@@ -1022,6 +1020,7 @@ mix_code_instruction* parse_code(mix_computer *computer, char ** code_buffer, un
     for (i = 0; i < *lines; i++) {
         char *tmp =  trimwhitespace(code_buffer[i]);
         if (tmp[0] == '*' && tmp[1] == '*') {
+            // Comment
             whiteLines++;
         } else if (tmp[0] == 0) {
             whiteLines++;
@@ -1071,7 +1070,6 @@ void store_instruction_in_memory(mix_computer *computer,mix_word *r, mix_code_in
     r->word.I = instruction.instruction.index;
     r->word.F = instruction.instruction.mod;
     r->word.C.data = instruction.instruction.operation;
-
 }
 
 void get_instruction_from_memory(mix_word r, mix_code_instruction *instruction) {
@@ -1107,4 +1105,5 @@ void compile_code(mix_computer *computer, char **code_buffer, unsigned int lines
         parse_instruction(computer, &processed_code[i - 1]);
         store_instruction_in_memory(computer,&computer->memory[i], processed_code[i - 1]);
     }
+
 }
