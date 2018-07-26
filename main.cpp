@@ -32,19 +32,38 @@ int read_code_file(const char* file, char ** code_buffer, unsigned int *lines) {
     return result;
 }
 
-int main()
+int main(int argc, const char * argv[])
 {
     mix_computer computer;
     init_computer(&computer);
 
     char* code_buffer[MAX_CODE_LINES];
+
+    if (argc < 3) {
+        printf("Usage mix -f [file]\n");
+        return -1;
+    }
+
+    int i;
+    unsigned int dump_memory = FALSE;
+    const char *sourcefile;
+    for (i = 0; i < argc; i++) {
+        if ( strcmp(argv[i], "-f") == 0) {
+            sourcefile = argv[i+1];
+            i++;
+        }
+        if ( strcmp(argv[i], "-d") == 0) {
+            dump_memory = TRUE;
+        }
+    }
+
     unsigned int lines = 0;
-    read_code_file("C:\\Users\\pablo.cruz\\Documents\\mix\\code.txt", code_buffer, &lines);
+    read_code_file(sourcefile, code_buffer, &lines);
 
     compile_code(&computer, code_buffer, lines);
     execute_code(&computer);
 
-    int i;
+
     for (i = 0; i < 27; i++) {
         print_memory(computer.memory, i);
     }

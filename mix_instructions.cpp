@@ -663,7 +663,8 @@ void convert_registers_to_char(mix_word *r1, mix_word *r2) {
 }
 
 void shift_register_left(mix_word *r) {
-    mix_word rA = *r;
+    mix_word rA;
+    copy_word(&rA, r);
     rA.word.A1 = rA.word.A2;
     rA.word.A2 = rA.word.I;
     rA.word.I = rA.word.F;
@@ -675,7 +676,8 @@ void shift_register_left(mix_word *r) {
 }
 
 void shift_register_right(mix_word *r) {
-    mix_word rA = *r;
+    mix_word rA;
+    copy_word(&rA, r);
     rA.word.C = r->word.F;
     rA.word.F = r->word.I;
     rA.word.I = r->word.A2;
@@ -687,8 +689,10 @@ void shift_register_right(mix_word *r) {
 }
 
 void shift_two_registers_left(mix_word *r1, mix_word *r2) {
-    mix_word rA = *r1;
-    mix_word rX = *r2;
+    mix_word rA;
+    copy_word(&rA, r1);
+    mix_word rX;
+    copy_word(&rX, r2);
     rA.word.A1 = rA.word.A2;
     rA.word.A2 = rA.word.I;
     rA.word.I = rA.word.F;
@@ -707,8 +711,10 @@ void shift_two_registers_left(mix_word *r1, mix_word *r2) {
 }
 
 void shift_two_registers_right(mix_word *r1, mix_word *r2) {
-    mix_word rA = *r1;
-    mix_word rX = *r2;
+    mix_word rA;
+    copy_word(&rA, r1);
+    mix_word rX;
+    copy_word(&rX, r2);
 
     rX.word.C = rX.word.F;
     rX.word.F = rX.word.I;
@@ -729,7 +735,8 @@ void shift_two_registers_right(mix_word *r1, mix_word *r2) {
 }
 
 void shift_register_left_circular(mix_word *r) {
-    mix_word rA = *r;
+    mix_word rA;
+    copy_word(&rA, r);
     rA.word.A1 = rA.word.A2;
     rA.word.A2 = rA.word.I;
     rA.word.I = rA.word.F;
@@ -739,7 +746,8 @@ void shift_register_left_circular(mix_word *r) {
 }
 
 void shift_register_right_circular(mix_word *r) {
-    mix_word rA = *r;
+    mix_word rA;
+    copy_word(&rA, r);
     rA.word.C = r->word.F;
     rA.word.F = r->word.I;
     rA.word.I = r->word.A2;
