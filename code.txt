@@ -1,6 +1,6 @@
 BUF     EQU     2000
 TERM    EQU     19
-        ORIG    2000
+        ORIG    6
         ENTA    2
         DECA    4
 ** Comienzo el bucle
@@ -11,5 +11,11 @@ LOOP    STA     2000(1:5)
         OUT     BUF(TERM)
         CMPA    2000
         INCA    2
-        JL      LOOP
+        JL      SUBR
+        NOP
+        OUT     BUF(TERM)
+        OUT     2003(TERM)
+ SUBR   ENTA    20
+        STA     2003
+        OUT     2003(TERM)
         HLT

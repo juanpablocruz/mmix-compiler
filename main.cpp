@@ -46,9 +46,9 @@ int main(int argc, const char * argv[])
 
     int i;
     unsigned int dump_memory = FALSE;
-    const char *sourcefile;
+    const char *sourcefile = nullptr;
     for (i = 0; i < argc; i++) {
-        if ( strcmp(argv[i], "-f") == 0) {
+        if ( strcmp(argv[i], "-f") == 0 && sourcefile == nullptr) {
             sourcefile = argv[i+1];
             i++;
         }
@@ -64,17 +64,20 @@ int main(int argc, const char * argv[])
     execute_code(&computer);
 
 
-    for (i = 0; i < 27; i++) {
-        print_memory(computer.memory, i);
-    }
-    printf("      .\n");
-    printf("      .\n");
-    print_memory(computer.memory, 2000);
-    print_memory(computer.memory, 2001);
-    print_memory(computer.memory, 2002);
-    print_memory(computer.memory, 2003);
+    if (dump_memory) {
+        for (i = 0; i < 27; i++) {
+            print_memory(computer.memory, i);
+        }
+        printf("      .\n");
+        printf("      .\n");
+        print_memory(computer.memory, 2000);
+        print_memory(computer.memory, 2001);
+        print_memory(computer.memory, 2002);
+        print_memory(computer.memory, 2003);
 
-    print_computer(&computer);
+        print_computer(&computer);
+    }
+
 
     return 0;
 }

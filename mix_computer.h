@@ -30,6 +30,24 @@ typedef struct {
 
 } mix_word;
 
+typedef struct {
+    int operation;
+    unsigned int v;
+
+    mix_byte index;
+    mix_byte mod;
+} mix_instruction;
+
+typedef struct {
+    mix_instruction instruction;
+    char * label;
+    char * argument;
+    int hasLabel:1;
+    int hasArgument;
+    int hasInstruction;
+    unsigned int address;
+} mix_code_instruction;
+
 /*
  * A register can store either a word or two bytes and sign
 */
@@ -46,12 +64,18 @@ typedef union {
 typedef struct {
     char *label;
     unsigned int address;
+    mix_code_instruction *instruction;
 } label_address;
 
 typedef struct {
     char* name;
     unsigned int value;
 } mix_variable;
+
+typedef struct {
+    unsigned int index;
+    mix_code_instruction *instruction;
+} mix_address_pending;
 
 typedef struct {
     mix_word rA;
@@ -74,6 +98,9 @@ typedef struct {
 
     mix_variable* computer_variables;
     unsigned int variables_count;
+
+    mix_address_pending *pending_change;
+    unsigned int pending_change_count;
 } mix_computer;
 
 

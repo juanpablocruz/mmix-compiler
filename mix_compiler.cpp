@@ -32,19 +32,19 @@ void store_address_into_index(mix_register *r, unsigned int address) {
 
 void print_code_instruction(mix_code_instruction code_instruction) {
     int print = FALSE;
-    if (code_instruction.hasLabel == TRUE) {
+    if (code_instruction.hasLabel&1) {
         printf("(label)%s ",
                code_instruction.label);
         print = TRUE;
     }
-    if (code_instruction.hasInstruction == TRUE) {
+    if (code_instruction.hasInstruction&1) {
         printf("(op:mod)%d:%d (v)%d ",
                code_instruction.instruction.operation,
-               code_instruction.instruction.mod,
+               code_instruction.instruction.mod.data,
                code_instruction.instruction.v);
         print = TRUE;
     }
-    if (code_instruction.hasArgument == TRUE) {
+    if (code_instruction.hasArgument&1) {
         printf("(arg)%s ",
                code_instruction.argument);
         print = TRUE;
@@ -58,16 +58,18 @@ unsigned int get_memory_address_from_index(mix_register r) {
     return abs(convert_register_to_int(r));
 }
 
-unsigned int compute_address(mix_computer *computer,char *address) {
+unsigned int compute_address(mix_computer *computer,char *address, int *to_pending) {
     unsigned int addr = 0;
     char *end;
 
     unsigned int is_int = (unsigned int) strtol(address, &end, 10);
     if (strcmp(end,"") != 0) {
-        int i;
+        unsigned int i;
         for(i = 0; i < computer->labels_count; i++) {
             if (strcmp(computer->labels_computed[i].label, end) == 0) {
                 addr = computer->labels_computed[i].address;
+                addr += convert_bytes_to_data(&computer->r6.word);
+                *to_pending = TRUE;
                 break;
             }
         }
@@ -112,14 +114,15 @@ unsigned int get_instruction_address(mix_computer *computer, mix_instruction ins
     return instruction.v + indexData;
 }
 
-void parse_instruction(mix_computer *computer, mix_code_instruction *instruction) {
+void parse_instruction(mix_computer *computer, mix_code_instruction *instruction, unsigned int index) {
+    int to_pending = FALSE;
     // First we process the argument to find bitfields
     if (strchr(instruction->argument, '(') != nullptr) {
         char *address = strtok(instruction->argument,"(:)");
         char *from = strtok(nullptr, "(:)");
         char *dest = strtok(nullptr, "(:)");
 
-        instruction->instruction.v = compute_address(computer, address);
+        instruction->instruction.v = compute_address(computer, address, &to_pending);
 
         if (from != nullptr) {
             unsigned int mod;
@@ -144,7 +147,7 @@ void parse_instruction(mix_computer *computer, mix_code_instruction *instruction
                     mod = convert_range_to_int(&range);
                 } else {
                     if (instruction->instruction.operation == MOVE) {
-                        mod = (unsigned int) strtol(from,NULL,10);
+                        mod = (unsigned int) strtol(from,nullptr,10);
                     } else {
                         snprintf(range.range, 6, "(%s)", from);
                         mod = convert_range_to_int(&range);
@@ -155,7 +158,22 @@ void parse_instruction(mix_computer *computer, mix_code_instruction *instruction
             instruction->instruction.mod.data = mod;
         }
     } else {
-        instruction->instruction.v = compute_address(computer, instruction->argument);
+        instruction->instruction.v = compute_address(computer, instruction->argument, &to_pending);
+    }
+
+    if (to_pending) {
+        mix_address_pending *tmp = (mix_address_pending*)malloc(sizeof(mix_address_pending) * computer->pending_change_count + 1);
+        unsigned int i;
+        for (i = 0; i < computer->pending_change_count; i++) {
+            tmp[i] = computer->pending_change[i];
+        }
+        mix_address_pending newPending;
+        newPending.index = index;
+        newPending.instruction = instruction;
+
+        tmp[computer->pending_change_count] = newPending;
+        computer->pending_change = tmp;
+        computer->pending_change_count++;
     }
 }
 
@@ -188,7 +206,9 @@ mix_word apply_modifier_to_register(mix_word *reg, unsigned int mod) {
     return result;
 }
 
-int execute_instruction(mix_computer *computer, mix_code_instruction instruction) {
+int execute_instruction(mix_computer *computer, mix_code_instruction instruction, unsigned int instruction_address) {
+
+    int success = 0;
 
     unsigned int registerIndex = get_instruction_address(computer, instruction.instruction);
 
@@ -383,7 +403,7 @@ int execute_instruction(mix_computer *computer, mix_code_instruction instruction
     {
         switch (instruction.instruction.mod.data) {
         case 0: {
-            convert_data_to_bytes(&computer->rj.word, registerIndex);
+            convert_data_to_bytes(&computer->rj.word, instruction_address);
             computer->instructionIndex = registerIndex - 1;
         }break;
         case 1:{
@@ -391,49 +411,49 @@ int execute_instruction(mix_computer *computer, mix_code_instruction instruction
         }break; // JSJ
         case 2: { // JOV
             if (computer->overflow == 1) {
-                convert_data_to_bytes(&computer->rj.word, registerIndex);
+                convert_data_to_bytes(&computer->rj.word, instruction_address);
                 computer->instructionIndex = registerIndex - 1;
             }
         }break;
         case 3: { // JNOV
             if (computer->overflow == 0) {
-                convert_data_to_bytes(&computer->rj.word, registerIndex);
+                convert_data_to_bytes(&computer->rj.word, instruction_address);
                 computer->instructionIndex = registerIndex - 1;
             }
         }break;
         case 4: { // JL
             if (computer->comparison.L == 1) {
-                convert_data_to_bytes(&computer->rj.word, registerIndex);
+                convert_data_to_bytes(&computer->rj.word, instruction_address);
                 computer->instructionIndex = registerIndex - 1;
             }
         }break;
         case 5: { // JE
             if (computer->comparison.E == 1) {
-                convert_data_to_bytes(&computer->rj.word, registerIndex);
+                convert_data_to_bytes(&computer->rj.word, instruction_address);
                 computer->instructionIndex = registerIndex - 1;
             }
         }break;
         case 6: { // JG
             if (computer->comparison.G == 1) {
-                convert_data_to_bytes(&computer->rj.word, registerIndex);
+                convert_data_to_bytes(&computer->rj.word, instruction_address);
                 computer->instructionIndex = registerIndex - 1;
             }
         }break;
         case 7: { // JGE
             if (computer->comparison.L == 0) {
-                convert_data_to_bytes(&computer->rj.word, registerIndex);
+                convert_data_to_bytes(&computer->rj.word, instruction_address);
                 computer->instructionIndex = registerIndex - 1;
             }
         }break;
         case 8: { // JNE
             if (computer->comparison.E == 0) {
-                convert_data_to_bytes(&computer->rj.word, registerIndex);
+                convert_data_to_bytes(&computer->rj.word, instruction_address);
                 computer->instructionIndex = registerIndex - 1;
             }
         }break;
         case 9: { // JLE
             if (computer->comparison.G == 0) {
-                convert_data_to_bytes(&computer->rj.word, registerIndex);
+                convert_data_to_bytes(&computer->rj.word, instruction_address);
                 computer->instructionIndex = registerIndex - 1;
             }
         }break;
@@ -894,9 +914,10 @@ int execute_instruction(mix_computer *computer, mix_code_instruction instruction
     }break;
 
     default:
+        success = -1;
         break;
     }
-    return 0;
+    return success;
 }
 
 int execute_code(mix_computer *computer) {
@@ -904,18 +925,15 @@ int execute_code(mix_computer *computer) {
     while(!endOfCode) {
         mix_word instruction = computer->memory[computer->instructionIndex];
 
-        if (instruction.word.A1.data == 0 ) {
+        mix_code_instruction tmp;
+        get_instruction_from_memory(instruction, &tmp);
+        if (tmp.instruction.operation == HLT && tmp.instruction.mod.data == 2) {
             endOfCode = TRUE;
         } else {
-            mix_code_instruction tmp;
-            get_instruction_from_memory(instruction, &tmp);
-            if (tmp.instruction.operation == HLT && tmp.instruction.mod.data == 2) {
-                endOfCode = TRUE;
-            } else {
-                execute_instruction(computer,tmp);
-            }
-            computer->instructionIndex++;
+            execute_instruction(computer,tmp, computer->instructionIndex);
         }
+        computer->instructionIndex++;
+
     }
 
     return 0;
@@ -924,9 +942,7 @@ int execute_code(mix_computer *computer) {
 void process_code_line(mix_computer *computer, char** code, mix_code_instruction *code_instruction, unsigned int address) {
     int i;
     int hasInstruction = FALSE;
-    char *operationName = nullptr;
     mix_instruction instruction;
-    int instruction_index = 0;
     char *label = nullptr;
     int arguments = 0;
 
@@ -941,8 +957,6 @@ void process_code_line(mix_computer *computer, char** code, mix_code_instruction
             instruction = parse_instruction_code(code[i]);
             if (instruction.operation != -1) {
                 hasInstruction = TRUE;
-                instruction_index = i;
-                operationName = code[i];
             } else { // It may be a label
                 label = code[i];
             }
@@ -991,14 +1005,12 @@ void process_code_line(mix_computer *computer, char** code, mix_code_instruction
                 computer->labels_computed = newComputed;
 
                 label_address newAddress;
-                newAddress.address = address + 1;
+                newAddress.address = address;
                 newAddress.label = label;
 
                 computer->labels_computed[computer->labels_count] = newAddress;
                 computer->labels_count++;
             }
-
-
         }
 
         code_instruction->instruction = instruction;
@@ -1047,11 +1059,11 @@ mix_code_instruction* parse_code(mix_computer *computer, char ** code_buffer, un
     return processed_code;
 }
 
-void asign_index_to_instruction(mix_computer *computer, mix_instruction *instruction) {
+void asign_index_to_instruction(mix_instruction *instruction) {
     instruction->index.data = 3;
 }
 
-void store_instruction_in_memory(mix_computer *computer,mix_word *r, mix_code_instruction instruction) {
+void store_instruction_in_memory(mix_word *r, mix_code_instruction instruction) {
     /*
      *       ------------------------------------------------
      *       |   0   |   1   |   2   |   3   |   4   |   5    |
@@ -1062,7 +1074,7 @@ void store_instruction_in_memory(mix_computer *computer,mix_word *r, mix_code_in
 
     mix_register address = convert_int_to_register(instruction.instruction.v);
 
-    asign_index_to_instruction(computer, &instruction.instruction);
+    asign_index_to_instruction(&instruction.instruction);
 
     r->word.A1 = address.bytes.first;
     r->word.A2 =  address.bytes.second;
@@ -1096,14 +1108,61 @@ void compile_code(mix_computer *computer, char **code_buffer, unsigned int lines
 
     computer->labels_count = 0;
     computer->variables_count = 0;
+    computer->pending_change_count = 0;
     mix_code_instruction* processed_code = parse_code(computer, code_buffer, &lines);
 
     computer->instructionIndex = 1; // lets leave the 0 for null
 
     unsigned int i;
+    unsigned int indexRegister = computer->instructionIndex;
+
+    unsigned int origIndex = 0;
+
+    /*
+     * This is the preprocessing
+     * Here we iterate through each processed line and convert them to instructions
+     * also, we convert the variables to the corresponding values
+     * and set the labels to a post process
+    */
     for (i = computer->instructionIndex; i <= lines; i++) {
-        parse_instruction(computer, &processed_code[i - 1]);
-        store_instruction_in_memory(computer,&computer->memory[i], processed_code[i - 1]);
+        parse_instruction(computer, &processed_code[i - 1], i-1);
+        if (processed_code[i - 1].instruction.operation == ORIG &&
+                processed_code[i - 1].instruction.mod.data == 1) {
+            origIndex = i - 1;
+            // we want to store this displacement into r6
+            convert_data_to_bytes(&computer->r6.word, processed_code[i - 1].instruction.v - i);
+        }
     }
 
+    /*
+     * This is the post process
+     * Here we iterate through each instruction with a label
+     * and reparse the instruction to adjust the label it is pointing to
+     * in case there was an ORIG instruction that repositions everything
+     * Also we want to reprocess only the instructions that are after the
+     * ORIG which are the only ones that are repositioned.
+    */
+    if (origIndex) {
+        for (i = 0; i < computer->pending_change_count; i++) {
+            if (computer->pending_change[i].index > origIndex) {
+                parse_instruction(computer, computer->pending_change[i].instruction, i-1);
+            }
+        }
+    }
+
+
+    /*
+     * Now we are into proper compiling, we store all the instructions
+     * into its corresponding place in memory
+    */
+    for (i = computer->instructionIndex; i <= lines; i++) {
+        if (processed_code[i - 1].instruction.operation == ORIG &&
+                processed_code[i - 1].instruction.mod.data == 1) {
+            indexRegister = processed_code[i - 1].instruction.v;
+        } else {
+            store_instruction_in_memory(&computer->memory[indexRegister], processed_code[i - 1]);
+            processed_code[i - 1].address = indexRegister;
+            indexRegister++;
+        }
+    }
 }

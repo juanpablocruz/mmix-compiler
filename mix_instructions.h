@@ -190,23 +190,6 @@ typedef struct{
     char range[6];
 } mix_range;
 
-typedef struct {
-    int operation;
-    unsigned int v;
-
-    mix_byte index;
-    mix_byte mod;
-} mix_instruction;
-
-typedef struct {
-    mix_instruction instruction;
-    char * label;
-    char * argument;
-    int hasLabel:1;
-    int hasArgument;
-    int hasInstruction;
-} mix_code_instruction;
-
 
 int get_from_range(int range);
 int get_to_range(int range);

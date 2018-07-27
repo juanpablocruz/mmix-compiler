@@ -441,6 +441,7 @@ mix_instruction parse_instruction_code(const char *function) {
         opcode = MOVE;
     } else if(strcmp(function, "NOP") == 0) {
         opcode = NOP;
+        mod = 0;
     } else if(strcmp(function, "HLT") == 0) {
         opcode = HLT;
         mod = 2;
